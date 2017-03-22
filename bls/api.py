@@ -34,18 +34,21 @@ def unset_api_key():
 
 def _get_json(series, startyear=None, endyear=None, key=None,
               catalog=False, calculations=False, annualaverages=False):
+
+    # Process keywords and set defaults
     if type(series) == str:
         series = [series]
     thisyear = datetime.datetime.today().year
-    if endyear is None or int(endyear) > thisyear:
-        if startyear is None:
+    if not (endyear and int(endyear) <= thisyear):
+        if not startyear:
             endyear, startyear = thisyear, thisyear - 9
         else:
             endyear = min(int(startyear) + 9, thisyear)
-    elif startyear is None:
+    elif not startyear:
         startyear = int(endyear) - 10
+
     # TODO: daisy-chain requests to cover full timespan
-    key = key if key is not None else _KEY.key
+    key = key if key else _KEY.key
     data = {
         "seriesid": series,
         "startyear": startyear,
