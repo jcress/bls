@@ -48,13 +48,13 @@ def _get_json(series, startyear=None, endyear=None, key=None,
         startyear = int(endyear) - 10
 
     # TODO: daisy-chain requests to cover full timespan
-    key = key if key else _KEY.key
+    key = key or _KEY.key
     data = {
         "seriesid": series,
         "startyear": startyear,
         "endyear": endyear
     }
-    if key is not None:
+    if key:
         data.update({
             'registrationkey': key,
             'catalog': catalog,
