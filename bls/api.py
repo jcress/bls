@@ -14,6 +14,8 @@ import pandas as pd
 
 BASE_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 
+_concat = lambda iterable: sum(iterable, [])
+
 
 class _Key(object):
 
@@ -40,19 +42,16 @@ def _get_json(series, startyear=None, endyear=None, key=None,
         series = [series]
     thisyear = datetime.datetime.today().year
     if not (endyear and int(endyear) <= thisyear):
-        if not startyear:
-            endyear, startyear = thisyear, thisyear - 9
-        else:
-            endyear = min(int(startyear) + 9, thisyear)
-    elif not startyear:
-        startyear = int(endyear) - 10
+        endyear = thisyear
+    if not startyear:
+        startyear = thisyear - 9
 
-    # TODO: daisy-chain requests to cover full timespan
-    key = key or _KEY.key
+    results = []
+    sectionyear = min(startyear + 9, endyear)
     data = {
         "seriesid": series,
         "startyear": startyear,
-        "endyear": endyear
+        "endyear": sectionyear
     }
     if key:
         data.update({
@@ -62,7 +61,25 @@ def _get_json(series, startyear=None, endyear=None, key=None,
             'annualaverages': annualaverages
         })
 
-    return requests.post(BASE_URL, data=data).json()["Results"]
+    # Collect the API results 10 years at a time
+    while startyear <= endyear:
+        key = key or _KEY.key
+        data.update({
+            "startyear": startyear,
+            "endyear":sectionyear 
+        })
+
+        results.append(requests.post(BASE_URL, data=data).json()["Results"])
+        startyear, sectionyear = sectionyear + 1, min(sectionyear + 10, endyear)
+
+    merged = { 
+            'series': [ { 
+                'data': _concat([r['series'][0]['data'] for r in results]),
+                'seriesID': results[0]['series'][0]['seriesID']
+                }] 
+            }
+
+    return merged 
 
 
 def get_series(series, startyear=None, endyear=None, key=None,
@@ -91,3 +108,4 @@ def get_series(series, startyear=None, endyear=None, key=None,
     df.index = pd.to_datetime(df.index)
     df = df.applymap(float)
     return df[df.columns[0]] if len(df.columns) == 1 else df
+
