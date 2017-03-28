@@ -14,7 +14,7 @@ import pandas as pd
 
 BASE_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 
-_concat = lambda iterable: sum(iterable, [])
+listsum = lambda iterable: sum(iterable, [])
 
 
 class _Key(object):
@@ -74,7 +74,7 @@ def _get_json(series, startyear=None, endyear=None, key=None,
 
     merged = { 
             'series': [ { 
-                'data': _concat([r['series'][0]['data'] for r in results]),
+                'data': listsum([r['series'][0]['data'] for r in results]),
                 'seriesID': results[0]['series'][0]['seriesID']
                 }] 
             }
