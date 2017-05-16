@@ -74,11 +74,15 @@ def _get_json(series, startyear=None, endyear=None, key=None,
             headers=_headers).json()["Results"])
         startyear, sectionyear = sectionyear + 1, min(sectionyear + 10, endyear)
 
+    num_decades = len(results)
+    num_series = len(results[0]['series'])
+
     merged = { 
             'series': [{ 
-                'data': listsum([results[j]['series'][0]['data'] for j in range(len(results))]),
-                'seriesID': results[0]['series'][i]['seriesID'],
-                } for i in range(len(results[0]['series']))]
+                'data': listsum([results[j]['series'][0]['data'] \
+                        for j in range(num_decades)]),
+                'seriesID': results[0]['series'][i]['seriesID'], 
+                } for i in range(num_series)]
             }
 
     return merged 
