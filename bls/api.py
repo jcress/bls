@@ -6,15 +6,15 @@ from __future__ import (print_function, division, absolute_import,
                         unicode_literals)
 
 import datetime
-
-
 import os
 import requests
+import json
 import pandas as pd
 
 BASE_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 
 listsum = lambda iterable: sum(iterable, [])
+_headers = {'Content-type': 'application/json'}
 
 
 class _Key(object):
@@ -50,8 +50,8 @@ def _get_json(series, startyear=None, endyear=None, key=None,
     sectionyear = min(startyear + 9, endyear)
     data = {
         "seriesid": series,
-        "startyear": startyear,
-        "endyear": sectionyear
+        "startyear": str(startyear),
+        "endyear": str(sectionyear)
     }
     if key:
         data.update({
@@ -65,18 +65,20 @@ def _get_json(series, startyear=None, endyear=None, key=None,
     while startyear <= endyear:
         key = key or _KEY.key
         data.update({
-            "startyear": startyear,
-            "endyear":sectionyear 
+            "startyear": str(startyear),
+            "endyear": str(sectionyear)
         })
 
-        results.append(requests.post(BASE_URL, data=data).json()["Results"])
+        results.append(requests.post(BASE_URL, 
+            data=json.dumps(data),
+            headers=_headers).json()["Results"])
         startyear, sectionyear = sectionyear + 1, min(sectionyear + 10, endyear)
 
     merged = { 
-            'series': [ { 
-                'data': listsum([r['series'][0]['data'] for r in results]),
-                'seriesID': results[0]['series'][0]['seriesID']
-                }] 
+            'series': [{ 
+                'data': listsum([results[j]['series'][0]['data'] for j in range(len(results))]),
+                'seriesID': results[0]['series'][i]['seriesID'],
+                } for i in range(len(results[0]['series']))]
             }
 
     return merged 
