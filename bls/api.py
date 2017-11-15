@@ -86,5 +86,10 @@ def get_series(series, startyear=None, endyear=None, key=None,
             if i["period"] != "M13"
         } for series in results["series"]})
     df.index = pd.to_datetime(df.index)
+
+    df.index = df.index.str.replace('-Q0', '-Q')
+    df.index = pd.to_datetime(df.index)
+    df = df.replace('-', 'NaN')
+
     df = df.applymap(float)
     return df[df.columns[0]] if len(df.columns) == 1 else df
